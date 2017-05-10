@@ -29,7 +29,7 @@ static int cost (Signal* signA, Signal* signB, size_t tStepA, size_t tStepB){
 }
 
 static size_t min(size_t a, size_t b){
-    size_t tmp = DBL_MAX;
+    size_t tmp;
     if(a < b)
         tmp = a;
     else
@@ -38,7 +38,7 @@ static size_t min(size_t a, size_t b){
 }
 
 static size_t max(size_t a, size_t b){
-    size_t tmp = DBL_MAX;
+    size_t tmp;
     if(a > b)
         tmp = a;
     else
