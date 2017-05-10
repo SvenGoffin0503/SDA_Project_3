@@ -1,7 +1,6 @@
 #include "dynamicTimeWarping.h"
 #include "Signal.h"
-#include <math.h>
-#include <stdlib.h>
+#include <stddef.h>
 #include <float.h>
 
 
@@ -29,52 +28,39 @@ static int cost (Signal* signA, Signal* signB, size_t tStepA, size_t tStepB){
 }
 
 static size_t min(size_t a, size_t b){
-    size_t tmp;
-    if(a < b)
-        tmp = a;
-    else
-        tmp = b;
-    return tmp;
+    
+    return ( a < b ? a : b );
 }
 
 static size_t max(size_t a, size_t b){
-    size_t tmp;
-    if(a > b)
-        tmp = a;
-    else
-        tmp = b;
-    return tmp;
+    
+    return ( a > b ? a : b );
 }
 
 
 static double minVec(double a, double b, double c){
-    double tmp = DBL_MAX;
-    if(a < tmp)
-        tmp = a;
-    if(b < tmp)
-        tmp = b;
-    if(c < tmp)
-        tmp = c;
     
-    return tmp;
+    double tmp = (a < b ? a : b);
+    return (c < tmp ? c : tmp);
 }
 
 double dtw(Signal* signal1, Signal* signal2, size_t locality){
+    
     size_t height = signal1->size;
     size_t width = signal2->size;
     double ACMat[height][width];
     
-    if(locality > abs(height - width))
+    if(locality < abs(height - width))
         return DBL_MAX;
     
     for(size_t i = 0; i < height; i++)
         for(size_t j = 0; j < width ; j++)
             ACMat[i][j] = DBL_MAX;
     
-    ACMat[0][0] = 0;
+    ACMat[0][0] = 0.0;
     
-    for(size_t i = 0; i < height; i++){
-        for (size_t j = max(1, i-locality); j < min(width, i + locality); j++) {
+    for(size_t i = 1; i < height; i++){
+        for (size_t j = max(1, i-locality); j < min(width, i + locality); j++){
             ACMat[i][j] = cost(signal1, signal2,i, j) + minVec(ACMat[i-1][j], ACMat[i][j-1], ACMat[i-1][j-1]);
         }
     }
