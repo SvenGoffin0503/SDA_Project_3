@@ -2,7 +2,7 @@
 #include "Signal.h"
 #include <stddef.h>
 #include <float.h>
-
+#include <math.h>
 
 /* ------------------------------------------------------------------------- *
  * This function computes a local cost measure (by evaluating the average
@@ -50,7 +50,7 @@ double dtw(Signal* signal1, Signal* signal2, size_t locality){
     size_t width = signal2->size;
     double ACMat[height][width];
     
-    if(locality < abs(height - width))
+    if(locality < abs((int)(height - width)))
         return DBL_MAX;
     
     for(size_t i = 0; i < height; i++)
