@@ -1,7 +1,7 @@
 #include <float.h>
 #include <math.h>
 #include "dynamicTimeWarping.h"
-
+#include <stdio.h>
 
 /* ------------------------------------------------------------------------- *
  * This function computes a local cost measure (by evaluating the average
@@ -30,24 +30,6 @@ static double cost(Signal* signal1, Signal* signal2, size_t tStep1,
 }
 
 /* ------------------------------------------------------------------------- *
- * This function returns the minimum between the variables a and b of type 
- * size_t.
- * ------------------------------------------------------------------------- */
-static size_t min(int a, int b){
-	
-	return (size_t)( a < b ? a : b );
-}
-
-/* ------------------------------------------------------------------------- *
- * This function returns the maximum between the variables a and b of type
- * size_t.
- * ------------------------------------------------------------------------- */
-static size_t max(int a, int b){
-	
-	return (size_t)( a > b ? a : b );
-}
-
-/* ------------------------------------------------------------------------- *
  * This function returns the minimum between three variables of type double :
  * a, b and c.
  * ------------------------------------------------------------------------- */
@@ -57,7 +39,7 @@ static double minVec(double a, double b, double c){
 	return (c < tmp ? c : tmp);
 }
 
-/** ------------------------------------------------------------------------ *
+/* ------------------------------------------------------------------------- *
  * This function computes the dynamic time warping between two signals 
  * subject to a locality constraint.
  * ------------------------------------------------------------------------- */
@@ -79,8 +61,12 @@ double dtw(Signal* signal1, Signal* signal2, size_t locality){
 	
 	// Computation of the dtw score
 	for(size_t i = 1; i <= height; i++){
-		size_t init = max(1, (int)(i-locality));
-		size_t cond = min((int)width, (int)(i + locality));
+		// max(1, i - locality)
+		size_t init = (locality >= i)? 1 : i - locality;
+		
+		// min(width, i + locality)
+		size_t cond = (locality != SIZE_MAX &&
+					   width > i + locality)? i + locality : width;
 		
 		for (size_t j = init; j <= cond; j++){
 			
