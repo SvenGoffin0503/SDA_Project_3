@@ -71,9 +71,11 @@ DigitSequence bestSplit(Signal* signal, Database* database,
 		splitSeq[i].totScore = DBL_MAX;
 		splitSeq[i].splitInd = 0;
 		splitSeq[i].digit = -1;
+				printf("%d\n", i);
 	}
 
 	for(size_t i = lMin - 1; i < signal->size; i++){
+
 		DigitScore curDigit;
 		
 		if(i < lMax){
@@ -91,10 +93,12 @@ DigitSequence bestSplit(Signal* signal, Database* database,
 		
 		if(i >= (2 * lMin) - 1){
 			for(size_t j = lMin - 1; j < lMax; j++){
+				if(i - j == 0)
+					break;
 				Signal* cutSignal = cuttingSignal(signal, i - j, i);
-				if(!cutSignal)
+				if(!cutSignal){
 					return digitSeq;
-
+				}
 				curDigit = predictDigit(cutSignal, database, locality);
 				curDigit.score += splitSeq[i - j - 1].totScore;
 				freeSignal(cutSignal);
