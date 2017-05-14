@@ -1,7 +1,6 @@
 #include "splitSequence.h"
 #include "predictDigit.h"
 #include <float.h>
-#include <stdio.h>
 
 typedef struct {
 	double totScore;
@@ -29,7 +28,7 @@ static Signal* cuttingSignal(Signal* signal, size_t indStart, size_t indEnd){
 		free(signal);
 		return NULL;
 	}
-
+	
 	for (size_t i = 0; i < cutSignal->n_coef; ++i) {
 		cutSignal->mfcc[i] = malloc(sizeof(double) * cutSignal->size);
 		if (!signal->mfcc[i]) {
@@ -49,7 +48,7 @@ static Signal* cuttingSignal(Signal* signal, size_t indStart, size_t indEnd){
 			cutSignal->mfcc[i][j] = signal->mfcc[i][indStart + j];
 		}
 	}
-
+	
 	return cutSignal;
 }
 
@@ -64,6 +63,7 @@ static Signal* cuttingSignal(Signal* signal, size_t indStart, size_t indEnd){
 DigitSequence bestSplit(Signal* signal, Database* database,
 						size_t locality, size_t lMin, size_t lMax){
 	
+	
 	DigitSequence digitSeq = {0, 0, NULL, NULL};
 	splittedSeq splitSeq[signal->size];
 	
@@ -71,11 +71,9 @@ DigitSequence bestSplit(Signal* signal, Database* database,
 		splitSeq[i].totScore = DBL_MAX;
 		splitSeq[i].splitInd = 0;
 		splitSeq[i].digit = -1;
-				printf("%d\n", i);
 	}
-
+	
 	for(size_t i = lMin - 1; i < signal->size; i++){
-
 		DigitScore curDigit;
 		
 		if(i < lMax){
@@ -83,7 +81,7 @@ DigitSequence bestSplit(Signal* signal, Database* database,
 			if(!cutSignal){
 				return digitSeq;
 			}
-
+			
 			curDigit = predictDigit(cutSignal, database, locality);
 			splitSeq[i].totScore = curDigit.score;
 			splitSeq[i].digit = curDigit.digit;
@@ -95,6 +93,7 @@ DigitSequence bestSplit(Signal* signal, Database* database,
 			for(size_t j = lMin - 1; j < lMax; j++){
 				if(i - j == 0)
 					break;
+				
 				Signal* cutSignal = cuttingSignal(signal, i - j, i);
 				if(!cutSignal){
 					return digitSeq;
