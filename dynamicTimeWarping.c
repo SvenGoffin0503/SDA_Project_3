@@ -1,6 +1,8 @@
 #include <float.h>
 #include <math.h>
+#include <stdint.h>
 #include "dynamicTimeWarping.h"
+
 #include <stdio.h>
 
 /* ------------------------------------------------------------------------- *
@@ -45,34 +47,57 @@ static double minVec(double a, double b, double c){
  * ------------------------------------------------------------------------- */
 double dtw(Signal* signal1, Signal* signal2, size_t locality){
 	
-	size_t height = signal1->size;
-	size_t width = signal2->size;
-	double ACMat[height + 1][width + 1];
+	size_t height;
+	size_t width;
+	Signal* shortSignal;
+	Signal* longSignal;
+	
+	if(signal1->size < signal2->size){
+		height = signal1->size;
+		width = signal2->size;
+		shortSignal = signal1;
+		longSignal = signal2;
+	}
+	else{
+		height = signal2->size;
+		width = signal1->size;
+		shortSignal = signal2;
+		longSignal = signal1;
+	}
 	
 	// Locality constraint prevents the dtw from computing the score
-	if(locality < abs((int)(height - width)))
+	if(locality < width - height)
 		return DBL_MAX;
 	
+	// Initialization of the Accumulated Cost Matrix
+	double ACMat[height + 1][width + 1];
+
 	for(size_t i = 0; i <= height; i++)
-		for(size_t j = 0; j <= width ; j++)
-			ACMat[i][j] = DBL_MAX;
+		ACMat[i][0] = DBL_MAX;
+	
+	for(size_t j = 1; j <= width ; j++)
+		ACMat[0][j] = DBL_MAX;
 	
 	ACMat[0][0] = 0.0;
 	
 	// Computation of the dtw score
 	for(size_t i = 1; i <= height; i++){
-		// max(1, i - locality)
+		// init = max(1, i - locality)
 		size_t init = (locality >= i)? 1 : i - locality;
 		
-		// min(width, i + locality)
+		// cond = min(width, i + locality)
 		size_t cond = (locality != SIZE_MAX &&
 					   width > i + locality)? i + locality : width;
 		
+		ACMat[i][init - 1] = DBL_MAX;
+		
 		for (size_t j = init; j <= cond; j++){
 			
-			ACMat[i][j] = cost(signal1, signal2, i, j)
+			ACMat[i][j] = cost(shortSignal, longSignal, i, j)
 						+ minVec(ACMat[i-1][j], ACMat[i][j-1], ACMat[i-1][j-1]);
 		}
+		
+		ACMat[i][cond + 1] = DBL_MAX;
 	}
 	
 	return ACMat[height][width];
