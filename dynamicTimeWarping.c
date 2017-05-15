@@ -3,7 +3,6 @@
 #include <stdint.h>
 #include "dynamicTimeWarping.h"
 
-#include <stdio.h>
 
 /* ------------------------------------------------------------------------- *
  * This function computes a local cost measure (by evaluating the average
