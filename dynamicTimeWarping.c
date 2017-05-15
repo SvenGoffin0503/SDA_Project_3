@@ -77,7 +77,7 @@ double dtw(Signal* signal1, Signal* signal2, size_t locality){
 	for(size_t j = 1; j <= width ; j++)
 		ACMat[0][j] = DBL_MAX;
 	
-	ACMat[0][0] = 0.0;
+	ACMat[0][0] = cost(shortSignal, longSignal, 0, 0);
 	
 	// Computation of the dtw score
 	for(size_t i = 1; i <= height; i++){
