@@ -3,7 +3,6 @@
 #include "predictDigit.h"
 
 
-
 /* ------------------------------------------------------------------------- *
  * Structure used to keep usefull information about a digit sequence.
  *
@@ -21,9 +20,8 @@ typedef struct {
 
 
 /* ------------------------------------------------------------------------- *
- * This function returns a pointer to a Signal structure. The pointed 
- * structure is the portion of the original signal which is located between 
- * the indices indStart and indEnd.
+ * This function modies the variable signal in order to isolate one portion 
+ * of the signal. It returns false if a problem occurs, true otherwise.
  *
  * PARAMETERS
  *
@@ -33,45 +31,37 @@ typedef struct {
  * indEnd			The index of the end of the signal portion that will be
  *					isolated
  * ------------------------------------------------------------------------- */
-static Signal* cuttingSignal(Signal* signal, size_t indStart, size_t indEnd){
+static bool cuttingSignal(Signal* signal, size_t indStart, size_t indEnd){
 	
 	if(indStart > indEnd || indStart >= signal->size || indEnd >= signal->size)
-		return NULL;
-	// allocate pointer
-	Signal* cutSignal = (Signal*) malloc(sizeof(Signal));
-	if(!cutSignal)
-		return NULL;
+		return false;
 	
-	cutSignal->n_coef = signal->n_coef;
-	cutSignal->size = indEnd - indStart + 1;
-	
-	// allocate matrix
-	cutSignal->mfcc = malloc(sizeof(double*) * cutSignal->n_coef);
-	if (!cutSignal->mfcc) {
-		free(signal);
-		return NULL;
+	for (size_t i = 0; i < signal->n_coef; ++i) {
+		signal->mfcc[i] = signal->mfcc[i] + indStart;
 	}
-	
-	for (size_t i = 0; i < cutSignal->n_coef; ++i) {
-		cutSignal->mfcc[i] = signal->mfcc[i] + indStart;
-	}
-	
-	return cutSignal;
+
+	signal->size = indEnd - indStart + 1;
+	return true;
 }
 
 
 /* ------------------------------------------------------------------------- *
- * This function frees the memory allocated by the function cuttingSignal.
+ * This function reiitializes the original signal which has been modified by
+ * the function cuttingSignal.
  *
  * PARAMETERS
  *
- * cutSignal			A valid pointer to the structure which was created by
- *						the function cuttingSignal.
+ * cutSignal			A valid pointer to the modified signal
+ * originalsize			The size of the original signal
+ * originalInd			A valid pointer to an array containing the start 
+ *						indices of the original array
  * ------------------------------------------------------------------------- */
-static void freeCutSignal(Signal* cutSignal){
+static void reinitSignal(Signal* cutSignal, size_t originalSize,
+						 double** originalInd){
 	
-	free(cutSignal->mfcc);
-	free(cutSignal);
+	cutSignal->size = originalSize;
+	for(size_t i = 0; i < cutSignal->n_coef; i++)
+		cutSignal->mfcc[i] = originalInd[i];
 }
 
 
@@ -136,6 +126,11 @@ DigitSequence bestSplit(Signal* signal, Database* database,
 	
 	DigitSequence digitSeq = {0, 0, NULL, NULL};
 	splittedSeq splitSeq[signal->size];
+	size_t originalSize = signal->size;
+	double* originalInd[signal->n_coef];
+	
+	for(size_t i = 0; i < signal->n_coef; i++)
+		originalInd[i] = signal->mfcc[i];
 	
 	for(size_t i = lMin - 1; i < signal->size; i++){
 		DigitScore curDigit;
@@ -143,16 +138,14 @@ DigitSequence bestSplit(Signal* signal, Database* database,
 		
 		// The current signal portion can't be divided into several sequences
 		if(i < lMax){
-			Signal* cutSignal = cuttingSignal(signal, 0, i);
-			
-			if(!cutSignal)
+			if(!cuttingSignal(signal, 0, i))
 				return digitSeq;
 			
-			curDigit = predictDigit(cutSignal, database, locality);
+			curDigit = predictDigit(signal, database, locality);
 			splitSeq[i].totScore = curDigit.score;
 			splitSeq[i].digit = curDigit.digit;
 			splitSeq[i].splitInd = 0;
-			freeCutSignal(cutSignal);
+			reinitSignal(signal, originalSize, originalInd);
 		}
 		
 		// The current signal portion can be divided into several sequences
@@ -161,14 +154,12 @@ DigitSequence bestSplit(Signal* signal, Database* database,
 				if(i - j < lMin)
 					break;
 				
-				Signal* cutSignal = cuttingSignal(signal, i - j, i);
-				
-				if(!cutSignal)
+				if(!cuttingSignal(signal, i - j, i))
 					return digitSeq;
 		
-				curDigit = predictDigit(cutSignal, database, locality);
+				curDigit = predictDigit(signal, database, locality);
 				curDigit.score += splitSeq[i - j - 1].totScore;
-				freeCutSignal(cutSignal);
+				reinitSignal(signal, originalSize, originalInd);
 				
 				// Maintains the computed split with the lowest score
 				if(curDigit.score < splitSeq[i].totScore){
