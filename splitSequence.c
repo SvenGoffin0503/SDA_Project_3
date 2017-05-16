@@ -80,34 +80,34 @@ static void reinitSignal(Signal* cutSignal, size_t originalSize,
 static void retrieveSeq(DigitSequence* digitSeq, splittedSeq* splitSeq,
 								 Signal* signal){
 	
-	size_t k = 0;
+	size_t nbDigit = 0;
 	size_t i = signal->size - 1;
 	
 	// Computes the length of the unknown sequence
 	while(i < signal->size){
 		i = splitSeq[i].splitInd - 1;
-		k++;
+		nbDigit++;
 	}
 	
 	// Allocates necessary memory
-	digitSeq->digits = malloc(sizeof(int) * k);
+	digitSeq->digits = malloc(sizeof(int) * nbDigit);
 	if(!digitSeq->digits)
 		return;
 	
-	digitSeq->splits = malloc(sizeof(size_t) * k);
+	digitSeq->splits = malloc(sizeof(size_t) * nbDigit);
 	if(!digitSeq->splits){
 		free(digitSeq->digits);
 		return;
 	}
 	
 	// Reconstitution of the unknown sequence
-	digitSeq->nDigits = k;
+	digitSeq->nDigits = nbDigit;
 	i = signal->size - 1;
 	
 	while(i < signal->size){
-		k--;
-		digitSeq->digits[k] = splitSeq[i].digit;
-		digitSeq->splits[k] = splitSeq[i].splitInd;
+		nbDigit--;
+		digitSeq->digits[nbDigit] = splitSeq[i].digit;
+		digitSeq->splits[nbDigit] = splitSeq[i].splitInd;
 		i = splitSeq[i].splitInd - 1;
 	}
 	digitSeq->score = splitSeq[signal->size - 1].totScore;
