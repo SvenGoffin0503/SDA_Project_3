@@ -20,7 +20,7 @@ typedef struct {
 
 
 /* ------------------------------------------------------------------------- *
- * This function modies the variable signal in order to isolate one portion 
+ * This function modifies the variable signal in order to isolate one portion 
  * of the signal. It returns false if a problem occurs, true otherwise.
  *
  * PARAMETERS
@@ -46,7 +46,7 @@ static bool cuttingSignal(Signal* signal, size_t indStart, size_t indEnd){
 
 
 /* ------------------------------------------------------------------------- *
- * This function reiitializes the original signal which has been modified by
+ * This function reinitializes the original signal which has been modified by
  * the function cuttingSignal.
  *
  * PARAMETERS
@@ -56,12 +56,13 @@ static bool cuttingSignal(Signal* signal, size_t indStart, size_t indEnd){
  * originalInd			A valid pointer to an array containing the start 
  *						indices of the original array
  * ------------------------------------------------------------------------- */
-static void reinitSignal(Signal* cutSignal, size_t originalSize,
-						 double** originalInd){
+static void reinitSignal(Signal* cutSignal, const size_t originalSize,
+						 const double** originalInd){
 	
 	cutSignal->size = originalSize;
+	
 	for(size_t i = 0; i < cutSignal->n_coef; i++)
-		cutSignal->mfcc[i] = originalInd[i];
+		cutSignal->mfcc[i] = (double*) originalInd[i];
 }
 
 
@@ -77,7 +78,7 @@ static void reinitSignal(Signal* cutSignal, size_t originalSize,
  *					all the results computed by the function bestSplit
  * signal			A valid pointer to the unknown sequence
  * ------------------------------------------------------------------------- */
-static void retrieveSeq(DigitSequence* digitSeq, splittedSeq* splitSeq,
+static void retrieveSeq(DigitSequence* digitSeq, splittedSeq splitSeq[],
 								 Signal* signal){
 	
 	size_t nbDigit = 0;
@@ -85,6 +86,7 @@ static void retrieveSeq(DigitSequence* digitSeq, splittedSeq* splitSeq,
 	
 	// Computes the length of the unknown sequence
 	while(i < signal->size){
+		
 		i = splitSeq[i].splitInd - 1;
 		nbDigit++;
 	}
@@ -121,18 +123,21 @@ static void retrieveSeq(DigitSequence* digitSeq, splittedSeq* splitSeq,
  * Returns the optimal digit sequence, its score, its corresponding split
  * indexes as a structure.
  * ------------------------------------------------------------------------- */
-DigitSequence bestSplit(Signal* signal, Database* database,
-						size_t locality, size_t lMin, size_t lMax){
+DigitSequence bestSplit(Signal* signal, Database* database,size_t locality, size_t lMin, size_t lMax){
 	
 	DigitSequence digitSeq = {0, 0, NULL, NULL};
 	splittedSeq splitSeq[signal->size];
-	size_t originalSize = signal->size;
-	double* originalInd[signal->n_coef];
+	const size_t originalSize = signal->size;
+	const double* originalInd[signal->n_coef];
 	
 	for(size_t i = 0; i < signal->n_coef; i++)
 		originalInd[i] = signal->mfcc[i];
 	
+	for(size_t i = 0; i < lMin - 1; i++)
+		splitSeq[i].totScore = DBL_MAX;
+	
 	for(size_t i = lMin - 1; i < signal->size; i++){
+		printf("%zu \n", signal->size-i);
 		DigitScore curDigit;
 		splitSeq[i].totScore = DBL_MAX;
 		
@@ -160,7 +165,7 @@ DigitSequence bestSplit(Signal* signal, Database* database,
 				curDigit = predictDigit(signal, database, locality);
 				curDigit.score += splitSeq[i - j - 1].totScore;
 				reinitSignal(signal, originalSize, originalInd);
-				
+	
 				// Maintains the computed split with the lowest score
 				if(curDigit.score < splitSeq[i].totScore){
 					splitSeq[i].totScore = curDigit.score;
@@ -170,7 +175,7 @@ DigitSequence bestSplit(Signal* signal, Database* database,
 			}
 		}
 	}
-	
+
 	// Rebuilds the unknown sequence
 	retrieveSeq(&digitSeq, splitSeq, signal);
 	return digitSeq;
