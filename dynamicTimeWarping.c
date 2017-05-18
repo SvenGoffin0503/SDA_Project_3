@@ -41,7 +41,7 @@ static double minVec(double a, double b, double c){
 }
 
 /* ------------------------------------------------------------------------- *
- * This function computes the dynamic time warping between two signals 
+ * This function computes the dynamic time warping between two signals
  * subject to a locality constraint.
  * ------------------------------------------------------------------------- */
 double dtw(Signal* signal1, Signal* signal2, size_t locality){
@@ -70,8 +70,8 @@ double dtw(Signal* signal1, Signal* signal2, size_t locality){
 	
 	// Initialization of the Accumulated Cost Matrix
 	double ACMat[height + 1][width + 1];
-
-	for(size_t i = 0; i <= height; i++)
+	
+	for(size_t i = 1; i <= height; i++)
 		ACMat[i][0] = DBL_MAX;
 	
 	for(size_t j = 1; j <= width ; j++)
@@ -89,14 +89,13 @@ double dtw(Signal* signal1, Signal* signal2, size_t locality){
 					   width > i + locality)? i + locality : width;
 		
 		ACMat[i][init - 1] = DBL_MAX;
+		ACMat[i][cond + 1] = DBL_MAX;
 		
 		for (size_t j = init; j <= cond; j++){
 			
-			ACMat[i][j] = cost(shortSignal, longSignal, i, j)
-						+ minVec(ACMat[i-1][j], ACMat[i][j-1], ACMat[i-1][j-1]);
+			ACMat[i][j] = cost(shortSignal, longSignal, i - 1, j - 1)
+			+ minVec(ACMat[i-1][j], ACMat[i][j-1], ACMat[i-1][j-1]);
 		}
-		
-		ACMat[i][cond + 1] = DBL_MAX;
 	}
 	
 	return ACMat[height][width];
